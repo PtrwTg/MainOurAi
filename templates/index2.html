@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <meta name="description" content="เว็บค้นหาแนวเพลง เกี่ยวกับแนวเพลง">
+    <meta name="author" content="Suntiwong"> <!--คนสร้าง สันติวงศ์-->
+    <meta name="keywords" content="แนวเพลงนี้คืออะไร"> <!--Kw ในการค้นหาเว็ป-->
+	<title>Mic Web Page</title> <!--หัวข้อหน้าเว็ป-->
+	<link rel="stylesheet" type="text/css" href="/static/styles.css">
+
+</head>
+<body>
+	<header>
+		<h1>Mic Web Page</h1>
+	</header>
+	<section class="microphone">
+		<h2>music genre</h2>
+    <p>เบื่อจริงๆชอบอารมณ์ของเพลงนี้มากๆ แต่กลับไม่เข้าใจว่าแนวเพลงที่เรากำลังฟังคือเพลงอะไร</p>
+    <br>
+    
+<button id="recordButton" type="button" class="btn btn-primary">Start Recording</button>
+<button id="stopButton" type="button" class="btn btn-danger">Stop Recording</button>
+<button id="predictRecording" disabled>Predict Recording</button>
+
+    <audio id="audioPlayer" controls></audio>
+    <button id="deleteButton" type="button">Delete Recording</button>
+    <button id="submitRecording" type="button">Predict Recording</button>
+    <audio id="recordedAudio" controls></audio>
+    
+<br><br>
+
+        
+<form action="/predict/" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".wav" required>
+    <button type="submit">Predict</button>
+</form>
+
+		<p>A microphone is a device that converts sound waves into an electrical current.</p>
+    <br>
+    <p>Use AI to identify that song what genre it is
+    </p>
+	
+{% if predicted_label %}
+<p>Predicted Genre: {{ predicted_label }}</p>
+{% endif %}
+</section>
+	<footer>
+		<p>&copy; Suntiwong Mic Web Page</p>
+	</footer>
+  <script src="/static/script.js"></script>
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let audioBlob;
+
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(stream => {
+    mediaRecorder = new MediaRecorder(stream);
+    
+    mediaRecorder.ondataavailable = event => {
+      audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      document.getElementById("audioPlayer").src = audioUrl;
+    };
+  });
+
+document.getElementById("recordButton").addEventListener("click", () => {
+  audioChunks = [];
+  mediaRecorder.start();
+});
+
+document.getElementById("stopButton").addEventListener("click", () => {
+  mediaRecorder.stop();
+});
+
+document.getElementById("deleteButton").addEventListener("click", () => {
+  audioChunks = [];
+  document.getElementById("audioPlayer").src = "";
+});
+
+document.getElementById("submitRecording").addEventListener("click", () => {
+  if (audioBlob) {
+    const formData = new FormData();
+    formData.append("file", audioBlob, "recordedAudio.wav");
+    fetch('/predict/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      // Handle prediction result
+    });
+  }
+});
+</script>
+</body>
+</html>
+
